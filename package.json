@@ -9,6 +9,7 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
+    "install": "npm install --legacy-peer-deps",
     "preview": "vite preview"
   },
   "dependencies": {
