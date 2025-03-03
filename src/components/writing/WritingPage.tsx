@@ -161,20 +161,6 @@ export default function WritingPage() {
           )}
         </CardContent>
       </Card>
-
-      {/* Histórico de Redações */}
-      {user && (
-        <WritingHistory
-          userId={user.id}
-          onSelect={(writing) => {
-            setTopic(writing.topic)
-            setContent(writing.content)
-            setSupportMaterial(writing.supportMaterial || '')
-            setEvaluation(writing.feedback)
-            setShowEditor(false)
-          }}
-        />
-      )}
     </div>
   )
 }
