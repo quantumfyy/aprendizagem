@@ -4,6 +4,7 @@ export interface WritingResult {
   id: string;
   user_id: string;
   title: string;
+  topic: string;
   content: string;
   score: number;
   feedback: string;
@@ -18,7 +19,12 @@ export const writingService = {
         .from('writings')
         .insert({
           user_id: userId,
-          ...writing
+          title: writing.title,
+          topic: writing.topic,
+          content: writing.content,
+          score: writing.score,
+          feedback: writing.feedback,
+          support_material: writing.support_material
         })
         .select()
         .single();
@@ -26,6 +32,7 @@ export const writingService = {
       if (error) throw error;
       return data;
     } catch (error) {
+      console.error('Erro ao salvar redação:', error);
       throw error;
     }
   },
@@ -41,6 +48,7 @@ export const writingService = {
       if (error) throw error;
       return data;
     } catch (error) {
+      console.error('Erro ao carregar histórico:', error);
       throw error;
     }
   }

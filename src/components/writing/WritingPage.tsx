@@ -25,6 +25,8 @@ export default function WritingPage() {
     const saved = sessionStorage.getItem('writingEvaluation')
     return saved ? JSON.parse(saved) : null
   })
+  const [showEditor, setShowEditor] = useState(true);
+  const [showHistory, setShowHistory] = useState(false);
 
   // Persiste o estado na sessão
   useEffect(() => {
@@ -93,74 +95,101 @@ export default function WritingPage() {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-      <Card>
-        <CardContent className="pt-6">
-          {!topic ? (
-            <div className="text-center py-12">
-              <h2 className="text-2xl font-bold mb-4">Redação</h2>
-              <p className="text-muted-foreground mb-6">
-                Clique no botão abaixo para gerar um novo tema
-              </p>
-              <Button 
-                onClick={handleGenerateNewTopic}
-                disabled={isGenerating}
-                className="gap-2"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Gerando...</span>
-                  </>
-                ) : (
-                  <>
-                    <Bot className="h-4 w-4" />
-                    <span>Gerar Novo Tema</span>
-                  </>
-                )}
-              </Button>
-            </div>
-          ) : (
-            <>
-              <WritingPrompt
-                topic={topic}
-                supportMaterial={supportMaterial}
-                onGenerateNewTopic={handleGenerateNewTopic}
-                isGenerating={isGenerating}
-              />
-              
-              {!evaluation ? (
-                <div className="mt-6">
-                  <WritingEditor
-                    content={content}
-                    onChange={setContent}
-                    onSubmit={handleSubmit}
-                    isSubmitting={isSubmitting}
-                  />
-                </div>
-              ) : (
-                <div className="mt-6 space-y-6">
-                  <WritingFeedback feedback={evaluation} />
-                  <div className="flex gap-4">
-                    <Button 
-                      onClick={() => setShowEditor(true)}
-                      variant="outline"
-                      className="w-full"
-                    >
-                      Editar Redação
-                    </Button>
-                    <Button 
-                      onClick={handleNewEssay}
-                      className="w-full"
-                    >
-                      Nova Redação
-                    </Button>
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Redação</h1>
+        <div className="space-x-4">
+          <Button 
+            variant={showEditor ? "default" : "outline"}
+            onClick={() => {
+              setShowEditor(true);
+              setShowHistory(false);
+            }}
+          >
+            Nova Redação
+          </Button>
+          <Button 
+            variant={showHistory ? "default" : "outline"}
+            onClick={() => {
+              setShowEditor(false);
+              setShowHistory(true);
+            }}
+          >
+            Histórico
+          </Button>
+        </div>
+      </div>
+
+      {showEditor && (
+        <Card>
+          <CardContent className="pt-6">
+            {!topic ? (
+              <div className="text-center py-12">
+                <h2 className="text-2xl font-bold mb-4">Redação</h2>
+                <p className="text-muted-foreground mb-6">
+                  Clique no botão abaixo para gerar um novo tema
+                </p>
+                <Button 
+                  onClick={handleGenerateNewTopic}
+                  disabled={isGenerating}
+                  className="gap-2"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Gerando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Bot className="h-4 w-4" />
+                      <span>Gerar Novo Tema</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            ) : (
+              <>
+                <WritingPrompt
+                  topic={topic}
+                  supportMaterial={supportMaterial}
+                  onGenerateNewTopic={handleGenerateNewTopic}
+                  isGenerating={isGenerating}
+                />
+                
+                {!evaluation ? (
+                  <div className="mt-6">
+                    <WritingEditor
+                      content={content}
+                      onChange={setContent}
+                      onSubmit={handleSubmit}
+                      isSubmitting={isSubmitting}
+                    />
                   </div>
-                </div>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
+                ) : (
+                  <div className="mt-6 space-y-6">
+                    <WritingFeedback feedback={evaluation} />
+                    <div className="flex gap-4">
+                      <Button 
+                        onClick={() => setShowEditor(true)}
+                        variant="outline"
+                        className="w-full"
+                      >
+                        Editar Redação
+                      </Button>
+                      <Button 
+                        onClick={handleNewEssay}
+                        className="w-full"
+                      >
+                        Nova Redação
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
+      {showHistory && <WritingHistory />}
     </div>
   )
 }

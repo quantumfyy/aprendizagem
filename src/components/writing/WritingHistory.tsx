@@ -10,22 +10,26 @@ export function WritingHistory() {
   const [writings, setWritings] = useState<WritingResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const loadHistory = async () => {
-    if (!user) return;
-    try {
-      setIsLoading(true);
-      const history = await writingService.getWritingHistory(user.id);
-      setWritings(history);
-    } catch (error) {
-      console.error('Erro ao carregar histórico:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
+    async function loadHistory() {
+      if (!user) return;
+      try {
+        setIsLoading(true);
+        const history = await writingService.getWritingHistory(user.id);
+        setWritings(history);
+      } catch (error) {
+        console.error('Erro ao carregar histórico:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
     loadHistory();
   }, [user]);
+
+  if (isLoading) {
+    return <div>Carregando histórico...</div>;
+  }
 
   const averageScore = writings.length > 0
     ? Math.round(writings.reduce((acc, w) => acc + (w.score || 0), 0) / writings.length)
@@ -78,35 +82,38 @@ export function WritingHistory() {
           <CardTitle>Histórico de Redações</CardTitle>
         </CardHeader>
         <CardContent>
-          <ScrollArea className="h-[400px]">
+          <ScrollArea className="h-[500px]">
             <div className="space-y-4">
               {writings.length === 0 ? (
                 <p className="text-center text-muted-foreground">
-                  Nenhuma redação realizada ainda
+                  Nenhuma redação encontrada
                 </p>
               ) : (
                 writings.map((writing) => (
-                  <div 
-                    key={writing.id}
-                    className="p-4 border rounded-lg"
-                  >
+                  <Card key={writing.id} className="p-4">
                     <div className="flex justify-between items-start mb-2">
                       <div>
-                        <h4 className="font-medium">{writing.title}</h4>
+                        <h3 className="font-semibold">{writing.title}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Tema: {writing.topic}
+                        </p>
                         <p className="text-sm text-muted-foreground">
                           {new Date(writing.created_at).toLocaleDateString()}
                         </p>
                       </div>
                       <div className="text-right">
                         <div className="text-lg font-bold text-primary">
-                          {writing.score}
+                          Nota: {writing.score}
                         </div>
                       </div>
                     </div>
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {writing.feedback}
-                    </p>
-                  </div>
+                    <div className="mt-2">
+                      <h4 className="font-medium">Feedback:</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {writing.feedback}
+                      </p>
+                    </div>
+                  </Card>
                 ))
               )}
             </div>
