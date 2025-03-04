@@ -1,99 +1,118 @@
-import { useEffect, useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { userService } from '@/services/userService'
-import { WritingStats } from '@/types/writing'
-import { format } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
-import { Loader2, TrendingUp } from 'lucide-react'
+import { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useAuth } from '@/hooks/useAuth';
+import { writingService, WritingResult } from '@/services/writingService';
+import { FileText, TrendingUp, Star } from 'lucide-react';
 
-interface WritingHistoryProps {
-  userId: string
-  onSelect: (writing: WritingStats) => void
-}
+export function WritingHistory() {
+  const { user } = useAuth();
+  const [writings, setWritings] = useState<WritingResult[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-export function WritingHistory({ userId, onSelect }: WritingHistoryProps) {
-  const [writings, setWritings] = useState<WritingStats[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const loadHistory = async () => {
+    if (!user) return;
+    try {
+      setIsLoading(true);
+      const history = await writingService.getWritingHistory(user.id);
+      setWritings(history);
+    } catch (error) {
+      console.error('Erro ao carregar histórico:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    loadWritings()
-  }, [userId])
+    loadHistory();
+  }, [user]);
 
-  const loadWritings = async () => {
-    try {
-      const data = await userService.getUserWritings(userId)
-      setWritings(data)
-    } catch (error) {
-      console.error('Erro ao carregar histórico:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  const averageScore = writings.length > 0
+    ? Math.round(writings.reduce((acc, w) => acc + (w.score || 0), 0) / writings.length)
+    : 0;
 
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-6">
-          <Loader2 className="h-6 w-6 animate-spin" />
-        </CardContent>
-      </Card>
-    )
-  }
+  const bestScore = Math.max(...writings.map(w => w.score || 0), 0);
 
   return (
     <div className="space-y-4">
-      {/* Card de Progresso */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Progresso nas Redações
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {writings.length} {writings.length === 1 ? 'redação' : 'redações'} completadas
-          </div>
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center space-x-4">
+              <FileText className="h-8 w-8 text-primary" />
+              <div>
+                <p className="text-sm text-muted-foreground">Total de Redações</p>
+                <p className="text-2xl font-bold">{writings.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* Lista de Redações */}
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center space-x-4">
+              <Star className="h-8 w-8 text-primary" />
+              <div>
+                <p className="text-sm text-muted-foreground">Média das Notas</p>
+                <p className="text-2xl font-bold">{averageScore}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center space-x-4">
+              <TrendingUp className="h-8 w-8 text-primary" />
+              <div>
+                <p className="text-sm text-muted-foreground">Melhor Nota</p>
+                <p className="text-2xl font-bold">{bestScore}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle>Histórico de Redações</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {writings.map((writing) => (
-              <div
-                key={writing.id}
-                onClick={() => onSelect(writing)}
-                className="p-4 rounded-lg border hover:bg-accent cursor-pointer transition-colors"
-              >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-medium line-clamp-2">{writing.topic}</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {format(new Date(writing.created_at!), "d 'de' MMMM 'de' yyyy", { locale: ptBR })}
+          <ScrollArea className="h-[400px]">
+            <div className="space-y-4">
+              {writings.length === 0 ? (
+                <p className="text-center text-muted-foreground">
+                  Nenhuma redação realizada ainda
+                </p>
+              ) : (
+                writings.map((writing) => (
+                  <div 
+                    key={writing.id}
+                    className="p-4 border rounded-lg"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h4 className="font-medium">{writing.title}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(writing.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-bold text-primary">
+                          {writing.score}
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {writing.feedback}
                     </p>
                   </div>
-                  <div className="text-right">
-                    <span className="text-lg font-semibold text-primary">
-                      {writing.feedback?.score}/1000
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-
-            {writings.length === 0 && (
-              <p className="text-center text-muted-foreground py-8">
-                Nenhuma redação encontrada
-              </p>
-            )}
-          </div>
+                ))
+              )}
+            </div>
+          </ScrollArea>
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

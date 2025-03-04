@@ -26,24 +26,12 @@ export default function ProgressPage() {
           <TabsTrigger value="exercises">Exercícios</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Estatísticas Gerais</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {/* Adicionar estatísticas gerais aqui */}
-            </CardContent>
-          </Card>
+        <TabsContent value="overview">
+          {/* ... */}
         </TabsContent>
 
         <TabsContent value="writings" className="space-y-4">
-          <WritingHistory
-            userId={user.id}
-            onSelect={(writing) => {
-              navigate(`/writing?id=${writing.id}`)
-            }}
-          />
+          <WritingHistory />
         </TabsContent>
 
         <TabsContent value="exercises" className="space-y-4">
@@ -51,5 +39,5 @@ export default function ProgressPage() {
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }
