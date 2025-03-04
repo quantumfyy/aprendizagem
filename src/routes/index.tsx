@@ -10,6 +10,7 @@ import Progress from '@/pages/ProgressPage'
 import Settings from '@/pages/SettingsPage'
 import { supabase } from '@/services/supabase'
 import { useAuth } from '@/hooks/useAuth'
+import { QuizProvider } from '@/contexts/QuizContext';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth()
@@ -22,7 +23,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/login" replace />
   }
 
-  return <Layout>{children}</Layout>
+  return (
+    <QuizProvider>
+      <Layout>{children}</Layout>
+    </QuizProvider>
+  )
 }
 
 export const router = createBrowserRouter([

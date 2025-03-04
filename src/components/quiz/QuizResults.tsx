@@ -1,12 +1,15 @@
-
-import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BookOpen } from "lucide-react";
 import { motion } from "framer-motion";
 import { useQuiz } from "@/contexts/QuizContext";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { QuizHistory } from './QuizHistory';
 
 export function QuizResults() {
+  const [showHistory, setShowHistory] = useState(false);
+  const { addQuizResult } = useQuiz();
   const {
     score,
     activeQuiz,
@@ -24,6 +27,15 @@ export function QuizResults() {
   const quizTitle = activeQuiz === "generated" && generatedQuiz 
     ? generatedQuiz.title
     : availableQuizzes.find(q => q.id === activeQuiz)?.title;
+
+  // Salvar resultado quando o componente montar
+  useEffect(() => {
+    addQuizResult({
+      quiz_title: quizTitle,
+      score: score,
+      total_questions: currentQuestions.length
+    });
+  }, []);
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -130,7 +142,17 @@ export function QuizResults() {
             </motion.div>
           </div>
         </CardContent>
+        <CardFooter className="flex justify-center space-x-4">
+          <Button 
+            variant="outline" 
+            onClick={() => setShowHistory(!showHistory)}
+          >
+            {showHistory ? 'Ocultar Histórico' : 'Ver Histórico'}
+          </Button>
+        </CardFooter>
       </Card>
+
+      {showHistory && <QuizHistory />}
     </div>
   );
 }

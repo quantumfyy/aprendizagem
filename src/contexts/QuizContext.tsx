@@ -1,9 +1,11 @@
-
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
 import { toast } from "sonner";
 import { generateQuiz } from "@/lib/openai";
 import { QuizQuestion, QuizItem, GeneratedQuiz, QuizFormData } from "@/types/quiz";
 import { BookOpen, BookMarked, BrainCircuit } from "lucide-react";
+import { quizService, QuizResult } from '@/services/quizService';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/services/supabase';
 
 // Define the context state type
 interface QuizContextType {
@@ -28,6 +30,18 @@ interface QuizContextType {
   handleRestartQuiz: () => void;
   handleExitQuiz: () => void;
   onSubmitQuizForm: (values: QuizFormData) => Promise<void>;
+  quizHistory: QuizResult[];
+  addQuizResult: (result: Omit<QuizResult, 'id' | 'user_id' | 'created_at'>) => Promise<void>;
+  isLoading: boolean;
+  refreshHistory: () => Promise<void>;
+}
+
+interface QuizHistoryEntry {
+  id: string;
+  title: string;
+  date: Date;
+  score: number;
+  totalQuestions: number;
 }
 
 // Create context with default values
@@ -35,6 +49,7 @@ const QuizContext = createContext<QuizContextType | undefined>(undefined);
 
 // Provider component
 export function QuizProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   // Quiz state
   const [activeQuiz, setActiveQuiz] = useState<string | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -44,6 +59,72 @@ export function QuizProvider({ children }: { children: ReactNode }) {
   const [showResults, setShowResults] = useState(false);
   const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false);
   const [generatedQuiz, setGeneratedQuiz] = useState<GeneratedQuiz | null>(null);
+  const [quizHistory, setQuizHistory] = useState<QuizResult[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Adicione um console.log para debug
+  const refreshHistory = async () => {
+    if (!user) return;
+    try {
+      setIsLoading(true);
+      
+      // Verificar e atualizar a sessão se necessário
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        throw sessionError;
+      }
+
+      if (!session) {
+        throw new Error('Sessão não encontrada');
+      }
+
+      const history = await quizService.getQuizHistory(user.id);
+      setQuizHistory(history);
+    } catch (error: any) {
+      console.error('Erro ao carregar histórico:', error);
+      
+      // Se o token expirou, tenta fazer refresh da sessão
+      if (error.message === 'JWT expired') {
+        try {
+          const { data: { session }, error: refreshError } = await supabase.auth.refreshSession();
+          
+          if (refreshError) {
+            toast.error('Sua sessão expirou. Por favor, faça login novamente.');
+            // Redirecionar para login ou atualizar estado de autenticação
+            return;
+          }
+
+          if (session) {
+            // Tenta carregar o histórico novamente após refresh do token
+            const history = await quizService.getQuizHistory(user.id);
+            setQuizHistory(history);
+          }
+        } catch (refreshError) {
+          console.error('Erro ao renovar sessão:', refreshError);
+          toast.error('Erro ao renovar sua sessão. Por favor, faça login novamente.');
+        }
+      } else {
+        toast.error('Erro ao carregar histórico');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const addQuizResult = async (result: Omit<QuizResult, 'id' | 'user_id' | 'created_at'>) => {
+    if (!user) return;
+    try {
+      await quizService.saveQuizResult(user.id, result);
+      await refreshHistory();
+    } catch (error) {
+      console.error('Erro ao salvar resultado:', error);
+    }
+  };
+
+  useEffect(() => {
+    refreshHistory();
+  }, [user]);
 
   // Sample quizzes
   const availableQuizzes: QuizItem[] = [
@@ -239,6 +320,26 @@ export function QuizProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const saveToHistory = useCallback((quizData: QuizHistoryEntry) => {
+    setQuizHistory(prev => {
+      const newHistory = [...prev, quizData];
+      localStorage.setItem('quiz-history', JSON.stringify(newHistory));
+      return newHistory;
+    });
+  }, []);
+
+  const handleFinishQuiz = () => {
+    const historyEntry: QuizHistoryEntry = {
+      id: crypto.randomUUID(),
+      date: new Date(),
+      title: activeQuiz === "generated" && generatedQuiz ? generatedQuiz.title : availableQuizzes.find(q => q.id === activeQuiz)?.title || "",
+      score: score,
+      totalQuestions: activeQuiz === "generated" && generatedQuiz ? generatedQuiz.questions.length : questions.length,
+    };
+    saveToHistory(historyEntry);
+    // ...resto do código
+  };
+
   const value = {
     activeQuiz,
     currentQuestion,
@@ -255,7 +356,11 @@ export function QuizProvider({ children }: { children: ReactNode }) {
     handleNextQuestion,
     handleRestartQuiz,
     handleExitQuiz,
-    onSubmitQuizForm
+    onSubmitQuizForm,
+    quizHistory,
+    addQuizResult,
+    isLoading,
+    refreshHistory
   };
 
   return <QuizContext.Provider value={value}>{children}</QuizContext.Provider>;
@@ -269,3 +374,4 @@ export function useQuiz() {
   }
   return context;
 }
+

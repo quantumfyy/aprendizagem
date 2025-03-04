@@ -6,6 +6,7 @@ import { WritingHistory } from '@/components/writing/WritingHistory'
 import { useNavigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { userService } from '@/services/userService'
+import { QuizProgress } from '@/components/quiz/QuizProgress'
 
 export default function ProgressPage() {
   const { user } = useAuth()
@@ -46,14 +47,7 @@ export default function ProgressPage() {
         </TabsContent>
 
         <TabsContent value="exercises" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Histórico de Exercícios</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {/* Adicionar histórico de exercícios aqui */}
-            </CardContent>
-          </Card>
+          <QuizProgress />
         </TabsContent>
       </Tabs>
     </div>

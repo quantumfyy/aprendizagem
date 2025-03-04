@@ -10,6 +10,7 @@ import QuizPage from "./pages/QuizPage";
 import ChatPage from "./pages/ChatPage";
 import NotFound from "./pages/NotFound";
 import WritingPage from "./components/writing/WritingPage";
+import { QuizProvider } from '@/contexts/QuizContext'
 
 const queryClient = new QueryClient();
 
@@ -18,58 +19,60 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Navigate to="/profile" replace />} />
-          <Route 
-            path="/profile" 
-            element={
-              <Layout>
-                <ProfilePage />
-              </Layout>
-            } 
-          />
-          <Route 
-            path="/settings" 
-            element={
-              <Layout>
-                <SettingsPage />
-              </Layout>
-            } 
-          />
-          <Route 
-            path="/progress" 
-            element={
-              <Layout>
-                <ProgressPage />
-              </Layout>
-            } 
-          />
-          <Route 
-            path="/quiz" 
-            element={
-              <Layout>
-                <QuizPage />
-              </Layout>
-            } 
-          />
-          <Route 
-            path="/chat" 
-            element={
-              <Layout>
-                <ChatPage />
-              </Layout>
-            } 
-          />
-          <Route 
-            path="/writing" 
-            element={
-              <Layout>
-                <WritingPage />
-              </Layout>
-            } 
-          />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <QuizProvider>
+          <Routes>
+            <Route path="/" element={<Navigate to="/profile" replace />} />
+            <Route 
+              path="/profile" 
+              element={
+                <Layout>
+                  <ProfilePage />
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/settings" 
+              element={
+                <Layout>
+                  <SettingsPage />
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/progress" 
+              element={
+                <Layout>
+                  <ProgressPage />
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/quiz" 
+              element={
+                <Layout>
+                  <QuizPage />
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/chat" 
+              element={
+                <Layout>
+                  <ChatPage />
+                </Layout>
+              } 
+            />
+            <Route 
+              path="/writing" 
+              element={
+                <Layout>
+                  <WritingPage />
+                </Layout>
+              } 
+            />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </QuizProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

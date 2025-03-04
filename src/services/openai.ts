@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { EssayHistoryService } from './essayHistory';
 
 const openai = new OpenAI({
   apiKey: process.env.VITE_OPENAI_API_KEY,
@@ -18,7 +19,7 @@ interface EssayEvaluation {
 export async function generateEssayTopic() {
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-3.5-turbo",
       messages: [
         {
           role: "system",
@@ -140,12 +141,21 @@ export async function evaluateEssay(topic: string, content: string): Promise<Ess
     // Calcula pontuação total
     const totalScore = fullCompetencies.reduce((acc, comp) => acc + comp.score, 0);
 
-    return {
-      score: totalScore,
+    // Após obter o resultado, salvar no histórico
+    EssayHistoryService.saveEssay({
+      topic,
+      content,
+      totalScore: totalScore,
       competencies: fullCompetencies,
       suggestions: suggestions.length > 0 
         ? suggestions 
         : ['Continue praticando para melhorar suas habilidades.']
+    });
+
+    return {
+      score: totalScore,
+      competencies: fullCompetencies,
+      suggestions: suggestions
     };
   } catch (error) {
     console.error('Erro na avaliação:', error);
